@@ -40,6 +40,10 @@ def dataScrap():
                     "price":productPrice,
                     "url":productURL
                 })
+            next_page=soup.select("a[rel='next']")
+            if next_page:
+                urlsList.append("https://www.chocolate.co.uk{next}".format(next=next_page[0]["href"]))
+            
 if __name__=="__main__":
     dataScrap()
     csvSaver(data_list=scrapedData,filename="chocolateData")
