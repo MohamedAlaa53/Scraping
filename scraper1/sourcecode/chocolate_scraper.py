@@ -1,11 +1,23 @@
 import requests
 from bs4 import BeautifulSoup
+import csv
+
 
 #Defining Holding structure
 urlsList=[
     "https://www.chocolate.co.uk/collections/all",
 ]
 scrapedData=[]
+
+#CSv saving function
+def csvSaver(data_list:dict,filename:str):
+    #using first item in data list to define headers
+    headers=data_list[0].keys()
+    with open("{filename}.csv".format(filename=filename),'w',newline='') as csvfile:
+        writer=csv.DictWriter(csvfile,fieldnames=headers)
+        writer.writeheader()
+        writer.writerows(data_list)
+
 
 #Scraping function
 def dataScrap():
@@ -30,4 +42,4 @@ def dataScrap():
                 })
 if __name__=="__main__":
     dataScrap()
-    print(scrapedData)
+    csvSaver(data_list=scrapedData,filename="chocolateData")
