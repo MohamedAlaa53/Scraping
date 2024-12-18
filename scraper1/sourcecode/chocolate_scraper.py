@@ -90,18 +90,6 @@ class productpipeline:
 urlsList=[
     "https://www.chocolate.co.uk/collections/all",
 ]
-scrapedData=[]
-
-#CSv saving function
-def csvSaver(data_list:dict,filename:str):
-    #using first item in data list to define headers
-    headers=data_list[0].keys()
-    with open("{filename}.csv".format(filename=filename),'w',newline='') as csvfile:
-        writer=csv.DictWriter(csvfile,fieldnames=headers)
-        writer.writeheader()
-        writer.writerows(data_list)
-
-
 #Scraping function
 def dataScrap():
     for url in urlsList:
@@ -116,7 +104,8 @@ def dataScrap():
                 productTitle=product.select("a.product-item-meta__title")[0].get_text()
                 productPrice=product.select("span.price")[0].get_text()
                 productURL=product.select("a.product-item-meta__title")[0].get("href")
-                scrapedData.append({
+
+                datapipeline.addproduct({
                     "name":productTitle,
                     "price":productPrice,
                     "url":productURL
@@ -128,3 +117,6 @@ def dataScrap():
 if __name__=="__main__":
     #dataScrap()
     #csvSaver(data_list=scrapedData,filename="chocolateData")
+    datapipeline=productpipeline(csv_file_name="chocolateData")
+    dataScrap()
+    datapipeline.close()
