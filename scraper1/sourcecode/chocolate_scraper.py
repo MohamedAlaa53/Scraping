@@ -74,7 +74,7 @@ def dataScrap():
             products=soup.select("product-item")
             for product in products:
                 productTitle=product.select("a.product-item-meta__title")[0].get_text()
-                productPrice=product.select("span.price")[0].get_text().replace("\nSale price","")
+                productPrice=product.select("span.price")[0].get_text()
                 productURL=product.select("a.product-item-meta__title")[0].get("href")
                 scrapedData.append({
                     "name":productTitle,
