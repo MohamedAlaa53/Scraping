@@ -128,8 +128,6 @@ def dataScrap():
                 urlsList.append("https://www.chocolate.co.uk{next}".format(next=next_page[0]["href"]))
             
 if __name__=="__main__":
-    #dataScrap()
-    #csvSaver(data_list=scrapedData,filename="chocolateData")
     datapipeline=productpipeline(csv_file_name="chocolateData",json_file_name="chocolateData")
     dataScrap()
     datapipeline.close()
