@@ -1,7 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
-from dataclasses import dataclass,field,fields,InitVar,asdict
+import os
+from dataclasses import dataclass,field,InitVar,asdict
 
 #product class
 @dataclass
@@ -44,6 +45,46 @@ class product:
                     link_extension=self.URL
                     )
 
+class productpipeline:
+    def __init__(self,csv_file_name="",storage_limit=5):
+        self.namesList=[]
+        self.storageLimit=storage_limit
+        self.csv_file_name=csv_file_name
+        self.queue=[]
+    def addproduct(self,scrapeddata:dict):
+        rawdata=self.rawdata(scrapeddata=scrapeddata)
+        if self.is_duplicate(rawdata.clean_name):
+            print("Data with name {name} is duplicate. dropping entry....".format(name=rawdata["name"]))
+        else:
+            self.queue.append(asdict(rawdata))
+            if len(self.queue)>=self.storageLimit:
+                self.save_to_csv()
+    def is_duplicate(self,name):
+        if name in self.namesList:
+            return True
+        else:
+            self.namesList.append(name)
+            return False
+    def save_to_csv(self):
+        headers=self.queue[0].keys()
+        input(headers)
+        csvfile="{filename}.csv".format(filename=self.csv_file_name)
+        fileexistence=os.path.isfile(csvfile)
+        with open(csvfile,"a",newline="",encoding="UTF-8") as file:
+            writer=csv.DictWriter(file,fieldnames=headers)
+            if not fileexistence:
+                writer.writeheader()
+            writer.writerows(self.queue)
+        self.queue=[]
+    def rawdata(self,scrapeddata:dict):
+        return product(
+            name=scrapeddata.get("name"),
+            uncleaned_price=scrapeddata.get("price"),
+            URL=scrapeddata.get("url")
+        )
+    def close(self):
+        if len(self.queue)>0:
+            self.save_to_csv()
 
 
 #Defining Holding structure
@@ -86,5 +127,5 @@ def dataScrap():
                 urlsList.append("https://www.chocolate.co.uk{next}".format(next=next_page[0]["href"]))
             
 if __name__=="__main__":
-    dataScrap()
+    #dataScrap()
     #csvSaver(data_list=scrapedData,filename="chocolateData")
