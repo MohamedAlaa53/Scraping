@@ -1,6 +1,49 @@
 import requests
 from bs4 import BeautifulSoup
 import csv
+from dataclasses import dataclass,field,fields,InitVar,asdict
+
+#product class
+@dataclass
+class product:
+    name:str=""
+    uncleaned_price:InitVar[str]=""
+    price:float=field(init=False)
+    EGP_price:float=field(init=False)
+    URL:str=""
+    #post initialization method
+    def __post_init__(self,uncleaned_price):
+        self.name=self.clean_name()
+        self.price=self.get_price(uncleaned_price)
+        self.EGP_price=self.get_EGP_price()
+        self.URL=self.clean_URL()
+    #Getting clean name
+    def clean_name(self):
+        if self.name:
+            return self.name.strip()
+        else:
+            return "missing"
+    #Getting price value
+    def get_price(self,uncleaned_price:str):
+        if uncleaned_price:
+            #removing any character doesn't represent numerical value
+            alligble_characters="1234567890."
+            for character in uncleaned_price:
+                if character not in alligble_characters:
+                    uncleaned_price=uncleaned_price.replace(character,"")
+            return float(uncleaned_price)
+        else:
+            return 0.0
+    #converting to EGP
+    def get_EGP_price(self):
+        USD=64.60
+        return self.price*USD
+    #getting an absolute link
+    def clean_URL(self):
+        return "https://www.chocolate.co.uk{link_extension}".format(
+                    link_extension=self.URL
+                    )
+
 
 
 #Defining Holding structure
@@ -32,9 +75,7 @@ def dataScrap():
             for product in products:
                 productTitle=product.select("a.product-item-meta__title")[0].get_text()
                 productPrice=product.select("span.price")[0].get_text().replace("\nSale price","")
-                productURL="https://www.chocolate.co.uk{link_extension}".format(
-                    link_extension=product.select("a.product-item-meta__title")[0].get("href")
-                    )
+                productURL=product.select("a.product-item-meta__title")[0].get("href")
                 scrapedData.append({
                     "name":productTitle,
                     "price":productPrice,
@@ -46,4 +87,4 @@ def dataScrap():
             
 if __name__=="__main__":
     dataScrap()
-    csvSaver(data_list=scrapedData,filename="chocolateData")
+    #csvSaver(data_list=scrapedData,filename="chocolateData")
