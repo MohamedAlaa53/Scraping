@@ -45,9 +45,9 @@ class product:
         return "https://www.chocolate.co.uk{link_extension}".format(
                     link_extension=self.URL
                     )
-
+# a pipeline that add takes data processing it using data class and storing after collecting 5 entries
 class productpipeline:
-    def __init__(self,csv_file_name="",json_file_name="",storage_limit=5 #storing data every 5 entries):
+    def __init__(self,csv_file_name="",json_file_name="",storage_limit=5):
         self.namesList=[]
         self.storageLimit=storage_limit
         self.csv_file_name=csv_file_name
