@@ -53,8 +53,8 @@ class productpipeline:
         self.queue=[]
     def addproduct(self,scrapeddata:dict):
         rawdata=self.rawdata(scrapeddata=scrapeddata)
-        if self.is_duplicate(rawdata.clean_name):
-            print("Data with name {name} is duplicate. dropping entry....".format(name=rawdata["name"]))
+        if self.is_duplicate(rawdata.name):
+            print("Data with name {name} is duplicate. dropping entry....".format(name=rawdata.name))
         else:
             self.queue.append(asdict(rawdata))
             if len(self.queue)>=self.storageLimit:
@@ -67,7 +67,6 @@ class productpipeline:
             return False
     def save_to_csv(self):
         headers=self.queue[0].keys()
-        input(headers)
         csvfile="{filename}.csv".format(filename=self.csv_file_name)
         fileexistence=os.path.isfile(csvfile)
         with open(csvfile,"a",newline="",encoding="UTF-8") as file:
