@@ -2,6 +2,7 @@ import requests
 from bs4 import BeautifulSoup
 import csv
 import os
+import json
 from dataclasses import dataclass,field,InitVar,asdict
 
 #product class
@@ -46,10 +47,11 @@ class product:
                     )
 
 class productpipeline:
-    def __init__(self,csv_file_name="",storage_limit=5):
+    def __init__(self,csv_file_name="",json_file_name="",storage_limit=5 #storing data every 5 entries):
         self.namesList=[]
         self.storageLimit=storage_limit
         self.csv_file_name=csv_file_name
+        self.json_file_name=json_file_name
         self.queue=[]
     def addproduct(self,scrapeddata:dict):
         rawdata=self.rawdata(scrapeddata=scrapeddata)
@@ -58,7 +60,9 @@ class productpipeline:
         else:
             self.queue.append(asdict(rawdata))
             if len(self.queue)>=self.storageLimit:
-                self.save_to_csv()
+                self.save_to_csv() if self.csv_file_name else None
+                self.save_to_json() if self.json_file_name else None
+                self.queue=[]
     def is_duplicate(self,name):
         if name in self.namesList:
             return True
@@ -74,7 +78,16 @@ class productpipeline:
             if not fileexistence:
                 writer.writeheader()
             writer.writerows(self.queue)
-        self.queue=[]
+    def save_to_json(self):
+        jsonfile="{filename}.json".format(filename=self.json_file_name)
+        data=[]
+        jsonExistence=os.path.isfile(jsonfile)
+        if jsonExistence:
+            with open(jsonfile,"r",encoding="UTF-8") as file:
+                data=json.load(file)
+        data.extend(self.queue)
+        with open(jsonfile,"w",encoding="UTF-8") as file:
+            json.dump(data,file,indent=2)
     def rawdata(self,scrapeddata:dict):
         return product(
             name=scrapeddata.get("name"),
@@ -117,6 +130,6 @@ def dataScrap():
 if __name__=="__main__":
     #dataScrap()
     #csvSaver(data_list=scrapedData,filename="chocolateData")
-    datapipeline=productpipeline(csv_file_name="chocolateData")
+    datapipeline=productpipeline(csv_file_name="chocolateData",json_file_name="chocolateData")
     dataScrap()
     datapipeline.close()
