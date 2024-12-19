@@ -7,6 +7,7 @@ from dataclasses import dataclass,field,InitVar,asdict
 import time
 import platform
 import concurrent.futures
+import random
 #making our code concurrent
 def concurrency(threadNum:int=5):
     while len(urlsList)>0:
@@ -108,16 +109,76 @@ class productpipeline:
     def close(self):
         if len(self.queue)>0:
             self.save_to_csv()
+
+#fakeuser agent middleware
+class fakeuseragent:
+    def __init__(self,api_key:str,results:int=2):
+        self.api=api_key
+        self.results=results
+    def get_user_agents(self):
+        response=requests.get(
+            url="https://headers.scrapeops.io/v1/browser-headers",
+            params={
+                'api_key':self.api,
+                'num_results':self.results
+            }
+            )
+        if response.status_code==200:
+            userAgents_list=response.json()['result']
+            if userAgents_list:
+                return userAgents_list
+            else:
+                return self.fallback()
+        else:
+            return self.fallback()
+    def user_agent(self):
+        return random.choice(self.get_user_agents()) 
+    def fallback(self):
+        return [
+            {
+              'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:126.0) Gecko/20100101 Firefox/126.0',
+              'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+              'accept-language': 'en-US', 
+              'accept-encoding': 'gzip, deflate, br, zstd', 
+              'upgrade-insecure-requests': '1',
+              'sec-fetch-dest': 'document',
+              'sec-fetch-mode': 'navigate',
+              'sec-fetch-site': 'same-site',
+              'sec-fetch-user': '?1', 
+              'te': 'trailers', 
+              'dnt': '1'
+              },
+              {
+              'sec-ch-ua': '"Not A(Brand";v="99", "Google Chrome";v="121", "Chromium";v="121"', 
+              'sec-ch-ua-mobile': '?0', 
+              'sec-ch-ua-platform': '"Windows"', 
+              'upgrade-insecure-requests': '1', 
+              'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36', 
+              'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7', 
+              'sec-fetch-site': 'same-site', 
+              'sec-fetch-mode': 'navigate', 
+              'sec-fetch-user': '?1', 
+              'sec-fetch-dest': 'document', 
+              'accept-encoding': 'gzip, deflate, br, zstd', 
+              'accept-language': 'en-US'
+              },
+
+        ]
 #adding a retry logic
 class retrylogic:
-    def __init__(self,limitOfRetries:int=5,antibotCheck:bool=False,period:int=3):
+    def __init__(self,limitOfRetries:int=5,antibotCheck:bool=False,FakeUserAgent:bool=False,period:int=3):
         self.retriesLimit=limitOfRetries
         self.antibotCheck=antibotCheck
         self.sleepPeriod=period
+        self.fakeUserAgent=FakeUserAgent
     def retry(self,url:str):
         for retry in range(0,self.retriesLimit):
             try:
-                response=requests.request(method="GET",url=url)
+                headers={}
+                if self.fakeUserAgent:
+                  userAgent=fakeuseragent(api_key="f447fb5c-5b34-44f3-81ba-a9de30f68e51",results=10)
+                  headers=userAgent.user_agent()
+                response=requests.request(method="GET",url=url,headers=headers)
                 if response.status_code in [200,404]:
                     if self.antibotCheck and response.status_code==200:
                         if self.antibotCheck(response=response):
