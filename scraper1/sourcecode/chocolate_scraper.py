@@ -4,7 +4,10 @@ import csv
 import os
 import json
 from dataclasses import dataclass,field,InitVar,asdict
-
+import time
+import platform
+def screen_clear():
+    os.system("cls") if platform.system()=="Windows" else os.system("clear")
 #product class
 @dataclass
 class product:
@@ -97,6 +100,30 @@ class productpipeline:
     def close(self):
         if len(self.queue)>0:
             self.save_to_csv()
+#adding a retry logic
+class retrylogic:
+    def __init__(self,limitOfRetries:int=5,antibotCheck:bool=False,period:int=3):
+        self.retriesLimit=limitOfRetries
+        self.antibotCheck=antibotCheck
+        self.sleepPeriod=period
+    def retry(self,url:str):
+        for retry in range(0,self.retriesLimit):
+            try:
+                response=requests.request(method="GET",url=url)
+                if response.status_code in [200,404]:
+                    if self.antibotCheck and response.status_code==200:
+                        if self.antibotCheck(response=response):
+                            return False,response
+                    return True if response.status_code==200 else False,response
+                
+            except Exception as e:
+                print(str(e))
+            time.sleep(self.sleepPeriod)
+            screen_clear()
+        return False,None
+    def antibotCheck(self,response):
+        pass
+        #code for antiSbot is written here
 
 
 #Defining Holding structure
@@ -108,16 +135,16 @@ def dataScrap():
     for url in urlsList:
         #code is written here
         #sending HTTP request and getting response
-        response=requests.get(url)
-        if response.status_code==200:
-            #souping
+        validity,response=responseTillGet.retry(url=url)
+        #souping
+        if validity:
+            time.sleep(10)
             soup=BeautifulSoup(response.content,"html.parser")
             products=soup.select("product-item")
             for product in products:
                 productTitle=product.select("a.product-item-meta__title")[0].get_text()
                 productPrice=product.select("span.price")[0].get_text()
                 productURL=product.select("a.product-item-meta__title")[0].get("href")
-
                 datapipeline.addproduct({
                     "name":productTitle,
                     "price":productPrice,
@@ -126,8 +153,12 @@ def dataScrap():
             next_page=soup.select("a[rel='next']")
             if next_page:
                 urlsList.append("https://www.chocolate.co.uk{next}".format(next=next_page[0]["href"]))
+        else:
+            print("Scraping is invalid")
             
 if __name__=="__main__":
+    screen_clear()
     datapipeline=productpipeline(csv_file_name="chocolateData",json_file_name="chocolateData")
+    responseTillGet=retrylogic()
     dataScrap()
     datapipeline.close()
