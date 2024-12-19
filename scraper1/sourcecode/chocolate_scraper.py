@@ -177,7 +177,6 @@ class retrylogic:
                 if self.fakeUserAgent:
                   headers=userAgent.user_agent()
                 response=requests.request(method="GET",url=url,headers=headers)
-                input(response.content)
                 if response.status_code in [200,404]:
                     if self.antibotCheck and response.status_code==200:
                         if self.antibotCheck(response=response):
