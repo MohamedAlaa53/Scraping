@@ -176,7 +176,8 @@ class retrylogic:
                 headers={}
                 if self.fakeUserAgent:
                   headers=userAgent.user_agent()
-                response=requests.request(method="GET",url=url,headers=headers)
+                  headers["accept-encoding"]="utf-8"
+                response=requests.get(url=url,headers=headers)
                 if response.status_code in [200,404]:
                     if self.antibotCheck and response.status_code==200:
                         if self.antibotCheck(response=response):
@@ -226,6 +227,6 @@ if __name__=="__main__":
     screen_clear()
     datapipeline=productpipeline(csv_file_name="chocolateData",json_file_name="chocolateData")
     userAgent=fakeuseragent(api_key="f447fb5c-5b34-44f3-81ba-a9de30f68e51",results=10)
-    responseTillGet=retrylogic(FakeUserAgent=False)
+    responseTillGet=retrylogic(FakeUserAgent=True)
     concurrency(threadNum=3)
     datapipeline.close()
