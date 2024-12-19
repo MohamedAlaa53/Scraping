@@ -6,6 +6,14 @@ import json
 from dataclasses import dataclass,field,InitVar,asdict
 import time
 import platform
+import concurrent.futures
+#making our code concurrent
+def concurrency(threadNum:int=5):
+    while len(urlsList)>0:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=threadNum) as executor:
+            executor.map(dataScrap,urlsList)
+
+#clearing the screen
 def screen_clear():
     os.system("cls") if platform.system()=="Windows" else os.system("clear")
 #product class
@@ -131,14 +139,13 @@ urlsList=[
     "https://www.chocolate.co.uk/collections/all",
 ]
 #Scraping function
-def dataScrap():
-    for url in urlsList:
+def dataScrap(url):
         #code is written here
         #sending HTTP request and getting response
+        urlsList.remove(url)
         validity,response=responseTillGet.retry(url=url)
         #souping
         if validity:
-            time.sleep(10)
             soup=BeautifulSoup(response.content,"html.parser")
             products=soup.select("product-item")
             for product in products:
@@ -160,5 +167,5 @@ if __name__=="__main__":
     screen_clear()
     datapipeline=productpipeline(csv_file_name="chocolateData",json_file_name="chocolateData")
     responseTillGet=retrylogic()
-    dataScrap()
+    concurrency(threadNum=3)
     datapipeline.close()
