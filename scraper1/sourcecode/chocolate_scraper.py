@@ -117,12 +117,11 @@ class fakeuseragent:
         self.results=results
     def get_user_agents(self):
         response=requests.get(
-            url="https://headers.scrapeops.io/v1/browser-headers",
-            params={
-                'api_key':self.api,
-                'num_results':self.results
-            }
+            url='http://headers.scrapeops.io/v1/browser-headers?api_key={api_key}&num_results={results}'.format(
+                api_key=self.api,
+                results=self.results
             )
+        )
         if response.status_code==200:
             userAgents_list=response.json()['result']
             if userAgents_list:
@@ -176,9 +175,9 @@ class retrylogic:
             try:
                 headers={}
                 if self.fakeUserAgent:
-                  userAgent=fakeuseragent(api_key="f447fb5c-5b34-44f3-81ba-a9de30f68e51",results=10)
                   headers=userAgent.user_agent()
                 response=requests.request(method="GET",url=url,headers=headers)
+                input(response.content)
                 if response.status_code in [200,404]:
                     if self.antibotCheck and response.status_code==200:
                         if self.antibotCheck(response=response):
@@ -227,6 +226,7 @@ def dataScrap(url):
 if __name__=="__main__":
     screen_clear()
     datapipeline=productpipeline(csv_file_name="chocolateData",json_file_name="chocolateData")
-    responseTillGet=retrylogic()
+    userAgent=fakeuseragent(api_key="f447fb5c-5b34-44f3-81ba-a9de30f68e51",results=10)
+    responseTillGet=retrylogic(FakeUserAgent=False)
     concurrency(threadNum=3)
     datapipeline.close()
