@@ -8,6 +8,8 @@ import time
 import platform
 import concurrent.futures
 import random
+from itertools import cycle
+
 #making our code concurrent
 def concurrency(threadNum:int=5):
     while len(urlsList)>0:
@@ -165,11 +167,23 @@ class fakeuseragent:
         ]
 #adding a retry logic
 class retrylogic:
-    def __init__(self,limitOfRetries:int=5,antibotCheck:bool=False,FakeUserAgent:bool=False,period:int=3):
+    def __init__(self,limitOfRetries:int=5,antibotCheck:bool=False,FakeUserAgent:bool=False,period:int=3,UseProxy:bool=False):
         self.retriesLimit=limitOfRetries
         self.antibotCheck=antibotCheck
         self.sleepPeriod=period
         self.fakeUserAgent=FakeUserAgent
+        self.useProxy=UseProxy
+    #getting proxy 
+    def getfreeProxy(self):
+        response=requests.request(
+            method="GET",
+            url="https://free-proxy-list.net/",
+            )
+        soup=BeautifulSoup(response.content,"html.parser")
+        proxies_table=soup.select("table.table")
+        proxies_table_rows=proxies_table[0].select("tbody tr")
+        proxies_list=[f"{row.select("td")[0].text}:{row.select("td")[1].text}" for row in proxies_table_rows if row.select("td")[6].text=="yes"]
+        return proxies_list
     def retry(self,url:str):
         for retry in range(0,self.retriesLimit):
             try:
@@ -177,7 +191,20 @@ class retrylogic:
                 if self.fakeUserAgent:
                   headers=userAgent.user_agent()
                   headers["accept-encoding"]="utf-8"
-                response=requests.get(url=url,headers=headers)
+                if self.useProxy:
+                    proxies=cycle(self.getfreeProxy())
+                    while True:
+                        proxy=next(proxies)
+                        try:
+                            response=requests.get(url=url,headers=headers,proxies={"http":proxy,"https":proxy})
+                            response.raise_for_status()
+                            break
+                        except:
+                            print(f"proxy : {proxy} has failed!, Trying the next one...")
+                            time.sleep(3)
+                            screen_clear()
+                else:
+                    response=requests.get(url=url,headers=headers)
                 if response.status_code in [200,404]:
                     if self.antibotCheck and response.status_code==200:
                         if self.antibotCheck(response=response):
@@ -227,6 +254,6 @@ if __name__=="__main__":
     screen_clear()
     datapipeline=productpipeline(csv_file_name="chocolateData",json_file_name="chocolateData")
     userAgent=fakeuseragent(api_key="f447fb5c-5b34-44f3-81ba-a9de30f68e51",results=10)
-    responseTillGet=retrylogic(FakeUserAgent=True)
+    responseTillGet=retrylogic(FakeUserAgent=True,UseProxy=False)
     concurrency(threadNum=3)
     datapipeline.close()
