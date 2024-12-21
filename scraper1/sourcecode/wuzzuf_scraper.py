@@ -1,5 +1,5 @@
 #importing the used libraries in the project
-import requests,csv,os,json,time,platform,concurrent.futures,random,cloudscraper
+import requests,csv,os,json,time,platform,concurrent.futures,random
 from bs4 import BeautifulSoup
 from dataclasses import dataclass,asdict
 from itertools import cycle
